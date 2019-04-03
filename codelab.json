@@ -1,0 +1,26 @@
+{
+  "environment": "web",
+  "source": "first-web-api.md",
+  "format": "html",
+  "prefix": "https://storage.googleapis.com",
+  "mainga": "UA-49880327-14",
+  "updated": "2019-04-03T08:30:18-03:00",
+  "id": "01",
+  "duration": 14,
+  "title": "Tutorial: Create a web API with ASP.NET Core MVC",
+  "author": "Daniel Velardez",
+  "summary": "Create a web API with ASP.NET Core MVC Core.",
+  "theme": "",
+  "status": [
+    "draft"
+  ],
+  "category": [
+    "mvc"
+  ],
+  "tags": [
+    "web"
+  ],
+  "feedback": "gitlab.com/cuv",
+  "ga": "0",
+  "url": "01"
+}

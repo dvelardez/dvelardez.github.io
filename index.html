@@ -1,0 +1,859 @@
+
+<!doctype html>
+
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+  <meta name="theme-color" content="#4F7DC9">
+  <meta charset="UTF-8">
+  <title>Tutorial: Create a web API with ASP.NET Core MVC</title>
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Source+Code+Pro:400|Roboto:400,300,400italic,500,700|Roboto+Mono">
+  <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://storage.googleapis.com/codelab-elements/codelab-elements.css">
+  <style>
+    .success {
+      color: #1e8e3e;
+    }
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <google-codelab-analytics gaid="UA-49880327-14"></google-codelab-analytics>
+  <google-codelab title="Tutorial: Create a web API with ASP.NET Core MVC"
+                  environment="web"
+                  feedback-link="gitlab.com/cuv">
+    
+      <google-codelab-step label="Overview" duration="1">
+        <p>By <a href="https://gitlab.com/dvelardez" target="_blank">Daniel Velardez</a></p>
+<p>This tutorial teaches the basics of building a web API with ASP.NET Core.</p>
+<p>In this tutorial, you learn how to:</p>
+<ul>
+<li>Create a web API project.</li>
+<li>Add a model class.</li>
+<li>Create the database context.</li>
+<li>Register the database context.</li>
+<li>Add a controller.</li>
+<li>Add CRUD methods.</li>
+<li>Configure routing and URL paths.</li>
+<li>Specify return values.</li>
+<li>Call the web API with Postman.</li>
+<li>Call the web API with jQuery.</li>
+</ul>
+<p>At the end, you have a web API that can manage &#34;to-do&#34; items stored in a relational database.</p>
+<p>This tutorial creates the following API:</p>
+<table>
+<tr></tr>
+<tr><td colspan="1" rowspan="1"><p>GET /api/todo</p>
+</td><td colspan="1" rowspan="1"><p>Get all to-do items</p>
+</td><td colspan="1" rowspan="1"><p>None</p>
+</td><td colspan="1" rowspan="1"><p>Array of to-do items</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>GET /api/todo/{id}</p>
+</td><td colspan="1" rowspan="1"><p>Get an item by ID</p>
+</td><td colspan="1" rowspan="1"><p>None</p>
+</td><td colspan="1" rowspan="1"><p>To-do item</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>POST /api/todo</p>
+</td><td colspan="1" rowspan="1"><p>Add a new item</p>
+</td><td colspan="1" rowspan="1"><p>To-do item</p>
+</td><td colspan="1" rowspan="1"><p>To-do item</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>PUT /api/todo/{id}</p>
+</td><td colspan="1" rowspan="1"><p>Update an existing item  </p>
+</td><td colspan="1" rowspan="1"><p>To-do item</p>
+</td><td colspan="1" rowspan="1"><p>None</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>DELETE /api/todo/{id}    </p>
+</td><td colspan="1" rowspan="1"><p>Delete an item    </p>
+</td><td colspan="1" rowspan="1"><p>None</p>
+</td><td colspan="1" rowspan="1"><p>None</p>
+</td></tr>
+</table>
+<p>The following diagram shows the design of the app.</p>
+<p><img alt="The client is represented by a box on the left and submits a request and receives a response from the application, a box drawn on the right. Within the application box, three boxes represent the controller, the model, and the data access layer. The request comes into the application's controller, and read/write operations occur between the controller and the data access layer. The model is serialized and returned to the client in the response." src="img\24514778e3986793.png"></p>
+<h2>Prerequisites</h2>
+<ul>
+<li><a href="https://visualstudio.microsoft.com/downloads/" target="_blank">Visual Studio 2017 version 15.9 or later</a> with the <strong>ASP.NET and web development</strong> workload</li>
+<li><a href="https://www.microsoft.com/net/download/all" target="_blank">.NET Core SDK 2.2 or later</a></li>
+</ul>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Create a web project" duration="1">
+        <ul>
+<li>From the <strong>File</strong> menu, select <strong>New</strong> &gt; <strong>Project</strong>.</li>
+<li>Select the <strong>ASP.NET Core Web Application</strong> template. Name the project <em>TodoApi</em> and click <strong>OK</strong>.</li>
+<li>In the <strong>New ASP.NET Core Web Application - TodoApi</strong> dialog, choose the ASP.NET Core version. Select the <strong>API</strong> template and click <strong>OK</strong>. Do <strong>not</strong> select <strong>Enable Docker Support</strong>.</li>
+</ul>
+<p><img alt="VS new project dialog" src="img\d7a1b3b25f226a94.png"></p>
+<h2>Test the API</h2>
+<p>The project template creates a <code>values</code> API. Call the <code>Get</code> method from a browser to test the app.</p>
+<p>Press Ctrl+F5 to run the app. Visual Studio launches a browser and navigates to <code>https://localhost:&lt;port&gt;/api/values</code>, where <code>&lt;port&gt;</code> is a randomly chosen port number.</p>
+<p>If you get a dialog box that asks if you should trust the IIS Express certificate, select <strong>Yes</strong>. In the <strong>Security Warning</strong> dialog that appears next, select <strong>Yes</strong>.</p>
+<p>The following JSON is returned:</p>
+<pre><code>[&#34;value1&#34;,&#34;value2&#34;]
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Add a model class" duration="1">
+        <p>A <em>model</em> is a set of classes that represent the data that the app manages. The model for this app is a single <code>TodoItem</code> class.</p>
+<ul>
+<li>In <strong>Solution Explorer</strong>, right-click the project. Select <strong>Add</strong> &gt; <strong>New Folder</strong>. Name the folder <em>Models</em>.</li>
+<li>Right-click the <em>Models</em> folder and select <strong>Add</strong> &gt; <strong>Class</strong>. Name the class <em>TodoItem</em> and select <strong>Add</strong>.</li>
+<li>Replace the template code with the following code:</li>
+</ul>
+<pre><code>  namespace TodoApi.Models
+  {
+      public class TodoItem
+      {
+          public long Id { get; set; }
+          public string Name { get; set; }
+          public bool IsComplete { get; set; }
+      }
+  }
+</code></pre>
+<p>The <code>Id</code> property functions as the unique key in a relational database.</p>
+<p>Model classes can go anywhere in the project, but the <em>Models</em> folder is used by convention.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Add a database context" duration="1">
+        <p>The <em>database context</em> is the main class that coordinates Entity Framework functionality for a data model. This class is created by deriving from the <code>Microsoft.EntityFrameworkCore.DbContext</code> class.</p>
+<ul>
+<li>Right-click the <em>Models</em> folder and select <strong>Add</strong> &gt; <strong>Class</strong>. Name the class <em>TodoContext</em> and click <strong>Add</strong>.</li>
+<li>Replace the template code with the following code:</li>
+</ul>
+<pre><code>  using Microsoft.EntityFrameworkCore;
+
+  namespace TodoApi.Models
+  {
+      public class TodoContext : DbContext
+      {
+          public TodoContext(DbContextOptions&lt;TodoContext&gt; options)
+              : base(options)
+          {
+          }
+
+          public DbSet&lt;TodoItem&gt; TodoItems { get; set; }
+      }
+  }
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Register the database context" duration="1">
+        <p>In ASP.NET Core, services such as the DB context must be registered with the <a href="https://docs.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection?view=aspnetcore-2.2" target="_blank">dependency injection (DI)</a> container. The container provides the service to controllers.</p>
+<p>Update <em>Startup.cs</em> with the lines marked with the comment &#34;add this line(s)&#34;:</p>
+<pre><code>// Unused usings removed
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore; // add this line
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using TodoApi.Models; // add this line
+
+namespace TodoApi
+{
+    public class Startup
+    {
+        public Startup(IConfiguration configuration)
+        {
+            Configuration = configuration;
+        }
+
+        public IConfiguration Configuration { get; }
+
+        // This method gets called by the runtime. Use this method to add services to the
+        //container.
+        public void ConfigureServices(IServiceCollection services)
+        {
+            services.AddDbContext&lt;TodoContext&gt;(opt =&gt;
+                opt.UseInMemoryDatabase(&#34;TodoList&#34;)); // add this lines
+            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+        }
+
+        // This method gets called by the runtime. Use this method to configure the HTTP
+        //request pipeline.
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        {
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
+            else
+            {
+                // The default HSTS value is 30 days. You may want to change this for
+                // production scenarios, see https://aka.ms/aspnetcore-hsts.
+                app.UseHsts();
+            }
+
+            app.UseHttpsRedirection();
+            app.UseMvc();
+        }
+    }
+}
+</code></pre>
+<p>The preceding code:</p>
+<ul>
+<li>Removes unused <code>using</code> declarations.</li>
+<li>Adds the database context to the DI container.</li>
+<li>Specifies that the database context will use an in-memory database.</li>
+</ul>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Add a controller" duration="1">
+        <ul>
+<li>Right-click the <em>Controllers</em> folder.</li>
+<li>Select <strong>Add</strong> &gt; <strong>New Item</strong>.</li>
+<li>In the <strong>Add New Item</strong> dialog, select the <strong>API Controller Class</strong> template.</li>
+<li>Name the class <em>TodoController</em>, and select <strong>Add</strong>.</li>
+</ul>
+<p><img alt="Add new Item dialog with controller in search box and web api controller selected" src="img\d60b2d6b243c3c89.png"></p>
+<ul>
+<li>Replace the template code with the following code:</li>
+</ul>
+<pre><code>  using Microsoft.AspNetCore.Mvc;
+  using Microsoft.EntityFrameworkCore;
+  using System.Collections.Generic;
+  using System.Linq;
+  using System.Threading.Tasks;
+  using TodoApi.Models;
+
+  namespace TodoApi.Controllers
+  {
+      [Route(&#34;api/[controller]&#34;)]
+      [ApiController]
+      public class TodoController : ControllerBase
+      {
+          private readonly TodoContext _context;
+          #endregion
+
+          public TodoController(TodoContext context)
+          {
+              _context = context;
+
+              if (_context.TodoItems.Count() == 0)
+              {
+                  // Create a new TodoItem if collection is empty,
+                  // which means you can&#39;t delete all TodoItems.
+                  _context.TodoItems.Add(new TodoItem { Name = &#34;Item1&#34; });
+                  _context.SaveChanges();
+              }
+          }
+      }
+  }
+</code></pre>
+<p>The preceding code:</p>
+<ul>
+<li>Defines an API controller class without methods.</li>
+<li>Decorates the class with the <a href="/dotnet/api/microsoft.aspnetcore.mvc.apicontrollerattribute" target="_blank"><br>[ApiController]</a> attribute. This attribute indicates that the controller responds to web API requests. For information about specific behaviors that the attribute enables, see <a href="https://docs.microsoft.com/en-us/aspnet/core/web-api/index?view=aspnetcore-2.2#annotation-with-apicontroller-attribute" target="_blank">Annotation with ApiController attribute</a>.</li>
+<li>Uses DI to inject the database context (<code>TodoContext</code>) into the controller. The database context is used in each of the <a href="https://wikipedia.org/wiki/Create,_read,_update_and_delete" target="_blank">CRUD</a> methods in the controller.</li>
+<li>Adds an item named <code>Item1</code> to the database if the database is empty. This code is in the constructor, so it runs every time there&#39;s a new HTTP request. If you delete all items, the constructor creates <code>Item1</code> again the next time an API method is called. So it may look like the deletion didn&#39;t work when it actually did work.</li>
+</ul>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Add Get methods" duration="1">
+        <p>To provide an API that retrieves to-do items, add the following methods to the <code>TodoController</code> class:</p>
+<pre><code>// GET: api/Todo
+[HttpGet]
+public async Task&lt;ActionResult&lt;IEnumerable&lt;TodoItem&gt;&gt;&gt; GetTodoItems()
+{
+    return await _context.TodoItems.ToListAsync();
+}
+
+#region snippet_GetByID
+// GET: api/Todo/5
+[HttpGet(&#34;{id}&#34;)]
+public async Task&lt;ActionResult&lt;TodoItem&gt;&gt; GetTodoItem(long id)
+{
+    var todoItem = await _context.TodoItems.FindAsync(id);
+
+    if (todoItem == null)
+    {
+        return NotFound();
+    }
+
+    return todoItem;
+}
+</code></pre>
+<p>These methods implement two GET endpoints:</p>
+<ul>
+<li><code>GET /api/todo</code></li>
+<li><code>GET /api/todo/{id}</code></li>
+</ul>
+<p>Test the app by calling the two endpoints from a browser. For example:</p>
+<ul>
+<li><code>https://localhost:&lt;port&gt;/api/todo</code></li>
+<li><code>https://localhost:&lt;port&gt;/api/todo/1</code></li>
+</ul>
+<p>The following HTTP response is produced by the call to <code>GetTodoItems</code>:</p>
+<pre><code>[
+  {
+    &#34;id&#34;: 1,
+    &#34;name&#34;: &#34;Item1&#34;,
+    &#34;isComplete&#34;: false
+  }
+]
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Routing and URL paths" duration="1">
+        <p>The <a href="/dotnet/api/microsoft.aspnetcore.mvc.httpgetattribute" target="_blank"><br>[HttpGet]</a> attribute denotes a method that responds to an HTTP GET request. The URL path for each method is constructed as follows:</p>
+<ul>
+<li>Start with the template string in the controller&#39;s <code>Route</code> attribute:</li>
+</ul>
+<pre><code>  namespace TodoApi.Controllers
+  {
+      [Route(&#34;api/[controller]&#34;)]
+      [ApiController]
+      public class TodoController : ControllerBase
+      {
+          private readonly TodoContext _context;
+
+</code></pre>
+<ul>
+<li>Replace <code>[controller]</code> with the name of the controller, which by convention is the controller class name minus the &#34;Controller&#34; suffix. For this sample, the controller class name is <strong>Todo</strong>Controller, so the controller name is &#34;todo&#34;. ASP.NET Core <a href="https://docs.microsoft.com/en-us/aspnet/core/mvc/controllers/routing?view=aspnetcore-2.2" target="_blank">routing</a> is case insensitive.</li>
+<li>If the <code>[HttpGet]</code> attribute has a route template (for example, <code>[HttpGet(&#34;products&#34;)]</code>), append that to the path. This sample doesn&#39;t use a template. For more information, see <a href="https://docs.microsoft.com/en-us/aspnet/core/mvc/controllers/routing?view=aspnetcore-2.2#attribute-routing-with-httpverb-attributes" target="_blank">Attribute routing with Http[Verb] attributes</a>.</li>
+</ul>
+<p>In the following <code>GetTodoItem</code> method, <code>&#34;{id}&#34;</code> is a placeholder variable for the unique identifier of the to-do item. When <code>GetTodoItem</code> is invoked, the value of <code>&#34;{id}&#34;</code> in the URL is provided to the method in its<code>id</code> parameter.</p>
+<pre><code>// GET: api/Todo/5
+[HttpGet(&#34;{id}&#34;)]
+public async Task&lt;ActionResult&lt;TodoItem&gt;&gt; GetTodoItem(long id)
+{
+    var todoItem = await _context.TodoItems.FindAsync(id);
+
+    if (todoItem == null)
+    {
+        return NotFound();
+    }
+
+    return todoItem;
+}
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Return values" duration="1">
+        <p>The return type of the <code>GetTodoItems</code> and <code>GetTodoItem</code> methods is <a href="https://docs.microsoft.com/en-us/aspnet/core/web-api/action-return-types?view=aspnetcore-2.2#actionresultt-type" target="_blank">ActionResult&lt;T&gt; type</a>. ASP.NET Core automatically serializes the object to <a href="https://www.json.org/" target="_blank">JSON</a> and writes the JSON into the body of the response message. The response code for this return type is 200, assuming there are no unhandled exceptions. Unhandled exceptions are translated into 5xx errors.</p>
+<p><code>ActionResult</code> return types can represent a wide range of HTTP status codes. For example, <code>GetTodoItem</code> can return two different status values:</p>
+<ul>
+<li>If no item matches the requested ID, the method returns a 404 <a href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllerbase.notfound?view=aspnetcore-2.2" target="_blank">NotFound</a> error code.</li>
+<li>Otherwise, the method returns 200 with a JSON response body. Returning <code>item</code> results in an HTTP 200 response.</li>
+</ul>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Test the GetTodoItems method" duration="1">
+        <p>This tutorial uses Postman to test the web API.</p>
+<ul>
+<li>Install <a href="https://www.getpostman.com/apps" target="_blank">Postman</a></li>
+<li>Start the web app.</li>
+<li>Start Postman.</li>
+<li>Disable <strong>SSL certificate verification</strong><ul>
+<li>From  <strong>File &gt; Settings</strong> (*<em>General</em> tab), disable <strong>SSL certificate verification</strong>.</li>
+</ul>
+</li>
+</ul>
+<aside class="warning"><p>Re-enable SSL certificate verification after testing the controller.</p>
+</aside>
+<p>Create a new request.</p>
+<ul>
+<li>Set the HTTP method to <strong>GET</strong>.</li>
+<li>Set the request URL to <code>https://localhost:&lt;port&gt;/api/todo</code>. For example, <code>https://localhost:5001/api/todo</code>.</li>
+</ul>
+<p>Set <strong>Two pane view</strong> in Postman.</p>
+<p>Select <strong>Send</strong>.</p>
+<p><img alt="Postman with Get request" src="img\d3b97d283e68f686.png"></p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Add a Create method" duration="1">
+        <p>Add the following <code>PostTodoItem</code> method:</p>
+<pre><code>// POST: api/Todo
+[HttpPost]
+public async Task&lt;ActionResult&lt;TodoItem&gt;&gt; PostTodoItem(TodoItem item)
+{
+    _context.TodoItems.Add(item);
+    await _context.SaveChangesAsync();
+
+    return CreatedAtAction(nameof(GetTodoItem), new { id = item.Id }, item);
+}
+</code></pre>
+<p>The preceding code is an HTTP POST method, as indicated by the <a href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.httppostattribute?view=aspnetcore-2.2" target="_blank">[HttpPost]</a> attribute. The method gets the value of the to-do item from the body of the HTTP request.</p>
+<p>The <code>CreatedAtAction</code> method:</p>
+<ul>
+<li>Returns an HTTP 201 status code, if successful. HTTP 201 is the standard response for an HTTP POST method that creates a new resource on the server.</li>
+<li>Adds a <code>Location</code> header to the response. The <code>Location</code> header specifies the URI of the newly created to-do item. For more information, see <a href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html" target="_blank">10.2.2 201 Created</a>.</li>
+<li>References the <code>GetTodoItem</code> action to create the <code>Location</code> header&#39;s URI. The C# <code>nameof</code> keyword is used to avoid hard-coding the action name in the <code>CreatedAtAction</code> call.</li>
+</ul>
+<pre><code>  // GET: api/Todo/5
+  [HttpGet(&#34;{id}&#34;)]
+  public async Task&lt;ActionResult&lt;TodoItem&gt;&gt; GetTodoItem(long id)
+  {
+      var todoItem = await _context.TodoItems.FindAsync(id);
+
+      if (todoItem == null)
+      {
+          return NotFound();
+      }
+
+      return todoItem;
+  }
+</code></pre>
+<h2>Test the PostTodoItem method</h2>
+<ul>
+<li>Build the project.</li>
+<li>In Postman, set the HTTP method to <code>POST</code>.</li>
+<li>Select the <strong>Body</strong> tab.</li>
+<li>Select the <strong>raw</strong> radio button.</li>
+<li>Set the type to <strong>JSON (application/json)</strong>.</li>
+<li>In the request body enter JSON for a to-do item:<pre><code>{
+  &#34;name&#34;:&#34;walk dog&#34;,
+  &#34;isComplete&#34;:true
+}
+</code></pre>
+<ul>
+<li>Select <strong>Send</strong>.</li>
+</ul>
+<img alt="Postman with create request" src="img\9c59f4c4ce9b16c6.png">If you get a 405 Method Not Allowed error, it&#39;s probably the result of not compiling the project after adding the <code>PostTodoItem</code> method.<h2>Test the location header URI</h2>
+<ul>
+<li>Select the <strong>Headers</strong> tab in the <strong>Response</strong> pane.</li>
+<li>Copy the <strong>Location</strong> header value:</li>
+</ul>
+<img alt="Headers tab of the Postman console" src="img\444840a26dddb652.png"><ul>
+<li>Set the method to GET.</li>
+<li>Paste the URI (for example, <code>https://localhost:5001/api/Todo/2</code>)</li>
+<li>Select <strong>Send</strong>.</li>
+</ul>
+Add a PutTodoItem methodAdd the following <code>PutTodoItem</code> method:<pre><code>// PUT: api/Todo/5
+[HttpPut(&#34;{id}&#34;)]
+public async Task&lt;IActionResult&gt; PutTodoItem(long id, TodoItem item)
+{
+if (id != item.Id)
+{
+    return BadRequest();
+}
+
+_context.Entry(item).State = EntityState.Modified;
+await _context.SaveChangesAsync();
+
+return NoContent();
+}
+</code></pre>
+</li>
+</ul>
+<p><code>PutTodoItem</code> is similar to <code>PostTodoItem</code>, except it uses HTTP PUT. The response is <a href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html" target="_blank">204 (No Content)</a>. According to the HTTP specification, a PUT request requires the client to send the entire updated entity, not just the changes. To support partial updates, use <a href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.httppatchattribute?view=aspnetcore-2.2" target="_blank">HTTP PATCH</a>.</p>
+<p>If you get an error calling <code>PutTodoItem</code>, call <code>GET</code> to ensure there is a an item in the database.</p>
+<h2>Test the PutTodoItem method</h2>
+<p>This sample uses an in-memory database that must be initialed each time the app is started. There must be an item in the database before you make a PUT call. Call GET to insure there is an item in the database before making a PUT call.</p>
+<p>Update the to-do item that has id = 1 and set its name to &#34;feed fish&#34;:</p>
+<pre><code>  {
+    &#34;ID&#34;:1,
+    &#34;name&#34;:&#34;feed fish&#34;,
+    &#34;isComplete&#34;:true
+  }
+</code></pre>
+<p>The following image shows the Postman update:</p>
+<p><img alt="Postman console showing 204 (No Content) response" src="img\13130d15d73f0ef8.png"></p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Add a DeleteTodoItem method" duration="1">
+        <p>Add the following <code>DeleteTodoItem</code> method:</p>
+<pre><code>// DELETE: api/Todo/5
+[HttpDelete(&#34;{id}&#34;)]
+public async Task&lt;IActionResult&gt; DeleteTodoItem(long id)
+{
+    var todoItem = await _context.TodoItems.FindAsync(id);
+
+    if (todoItem == null)
+    {
+        return NotFound();
+    }
+
+    _context.TodoItems.Remove(todoItem);
+    await _context.SaveChangesAsync();
+
+    return NoContent();
+}
+</code></pre>
+<p>The <code>DeleteTodoItem</code> response is <a href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html" target="_blank">204 (No Content)</a>.</p>
+<h2>Test the DeleteTodoItem method</h2>
+<p>Use Postman to delete a to-do item:</p>
+<ul>
+<li>Set the method to <code>DELETE</code>.</li>
+<li>Set the URI of the object to delete, for example <code>https://localhost:5001/api/todo/1</code></li>
+<li>Select <strong>Send</strong></li>
+</ul>
+<p>The sample app allows you to delete all the items, but when the last item is deleted, a new one is created by the model class constructor the next time the API is called.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Call the API with jQuery" duration="1">
+        <p>In this section, an HTML page is added that uses jQuery to call the web api. jQuery initiates the request and updates the page with the details from the API&#39;s response.</p>
+<p>Configure the app to <a href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.builder.staticfileextensions.usestaticfiles?view=aspnetcore-2.2#Microsoft_AspNetCore_Builder_StaticFileExtensions_UseStaticFiles_Microsoft_AspNetCore_Builder_IApplicationBuilder_" target="_blank">serve static files</a> and <a href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.builder.defaultfilesextensions.usedefaultfiles?view=aspnetcore-2.2#Microsoft_AspNetCore_Builder_DefaultFilesExtensions_UseDefaultFiles_Microsoft_AspNetCore_Builder_IApplicationBuilder_" target="_blank">enable default file mapping</a>:</p>
+<pre><code>public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+{
+    if (env.IsDevelopment())
+    {
+        app.UseDeveloperExceptionPage();
+    }
+    else
+    {
+        // The default HSTS value is 30 days. You may want to change this for
+        // production scenarios, see https://aka.ms/aspnetcore-hsts.
+        app.UseHsts();
+    }
+
+    app.UseDefaultFiles();
+    app.UseStaticFiles();
+    app.UseHttpsRedirection();
+    app.UseMvc();
+}
+</code></pre>
+<p>Create a <em>wwwroot</em> folder in the project directory.</p>
+<p>Add an HTML file named <em>index.html</em> to the <em>wwwroot</em> directory. Replace its contents with the following markup:</p>
+<pre><code>&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;meta charset=&#34;UTF-8&#34;&gt;
+    &lt;title&gt;To-do CRUD&lt;/title&gt;
+    &lt;style&gt;
+        input[type=&#39;submit&#39;], button, [aria-label] {
+            cursor: pointer;
+        }
+
+        #spoiler {
+            display: none;
+        }
+
+        table {
+            font-family: Arial, sans-serif;
+            border: 1px solid;
+            border-collapse: collapse;
+        }
+
+        th {
+            background-color: #0066CC;
+            color: white;
+        }
+
+        td {
+            border: 1px solid;
+            padding: 5px;
+        }
+    &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;To-do CRUD&lt;/h1&gt;
+    &lt;h3&gt;Add&lt;/h3&gt;
+    &lt;form action=&#34;javascript:void(0);&#34; method=&#34;POST&#34; onsubmit=&#34;addItem()&#34;&gt;
+        &lt;input type=&#34;text&#34; id=&#34;add-name&#34; placeholder=&#34;New to-do&#34;&gt;
+        &lt;input type=&#34;submit&#34; value=&#34;Add&#34;&gt;
+    &lt;/form&gt;
+
+    &lt;div id=&#34;spoiler&#34;&gt;
+        &lt;h3&gt;Edit&lt;/h3&gt;
+        &lt;form class=&#34;my-form&#34;&gt;
+            &lt;input type=&#34;hidden&#34; id=&#34;edit-id&#34;&gt;
+            &lt;input type=&#34;checkbox&#34; id=&#34;edit-isComplete&#34;&gt;
+            &lt;input type=&#34;text&#34; id=&#34;edit-name&#34;&gt;
+            &lt;input type=&#34;submit&#34; value=&#34;Save&#34;&gt;
+            &lt;a onclick=&#34;closeInput()&#34; aria-label=&#34;Close&#34;&gt;&amp;#10006;&lt;/a&gt;
+        &lt;/form&gt;
+    &lt;/div&gt;
+
+    &lt;p id=&#34;counter&#34;&gt;&lt;/p&gt;
+
+    &lt;table&gt;
+        &lt;tr&gt;
+            &lt;th&gt;Is Complete&lt;/th&gt;
+            &lt;th&gt;Name&lt;/th&gt;
+            &lt;th&gt;&lt;/th&gt;
+            &lt;th&gt;&lt;/th&gt;
+        &lt;/tr&gt;
+        &lt;tbody id=&#34;todos&#34;&gt;&lt;/tbody&gt;
+    &lt;/table&gt;
+
+    &lt;script src=&#34;https://code.jquery.com/jquery-3.3.1.min.js&#34;
+            integrity=&#34;sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=&#34;
+            crossorigin=&#34;anonymous&#34;&gt;&lt;/script&gt;
+    &lt;script src=&#34;site.js&#34;&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<p>Add a JavaScript file named <em>site.js</em> to the <em>wwwroot</em> directory. Replace its contents with the following code:</p>
+<pre><code>const uri = &#34;api/todo&#34;;
+let todos = null;
+function getCount(data) {
+  const el = $(&#34;#counter&#34;);
+  let name = &#34;to-do&#34;;
+  if (data) {
+    if (data &gt; 1) {
+      name = &#34;to-dos&#34;;
+    }
+    el.text(data + &#34; &#34; + name);
+  } else {
+    el.text(&#34;No &#34; + name);
+  }
+}
+
+$(document).ready(function() {
+  getData();
+});
+
+function getData() {
+  $.ajax({
+    type: &#34;GET&#34;,
+    url: uri,
+    cache: false,
+    success: function(data) {
+      const tBody = $(&#34;#todos&#34;);
+
+      $(tBody).empty();
+
+      getCount(data.length);
+
+      $.each(data, function(key, item) {
+        const tr = $(&#34;&lt;tr&gt;&lt;/tr&gt;&#34;)
+          .append(
+            $(&#34;&lt;td&gt;&lt;/td&gt;&#34;).append(
+              $(&#34;&lt;input/&gt;&#34;, {
+                type: &#34;checkbox&#34;,
+                disabled: true,
+                checked: item.isComplete
+              })
+            )
+          )
+          .append($(&#34;&lt;td&gt;&lt;/td&gt;&#34;).text(item.name))
+          .append(
+            $(&#34;&lt;td&gt;&lt;/td&gt;&#34;).append(
+              $(&#34;&lt;button&gt;Edit&lt;/button&gt;&#34;).on(&#34;click&#34;, function() {
+                editItem(item.id);
+              })
+            )
+          )
+          .append(
+            $(&#34;&lt;td&gt;&lt;/td&gt;&#34;).append(
+              $(&#34;&lt;button&gt;Delete&lt;/button&gt;&#34;).on(&#34;click&#34;, function() {
+                deleteItem(item.id);
+              })
+            )
+          );
+
+        tr.appendTo(tBody);
+      });
+
+      todos = data;
+    }
+  });
+}
+
+function addItem() {
+  const item = {
+    name: $(&#34;#add-name&#34;).val(),
+    isComplete: false
+  };
+
+  $.ajax({
+    type: &#34;POST&#34;,
+    accepts: &#34;application/json&#34;,
+    url: uri,
+    contentType: &#34;application/json&#34;,
+    data: JSON.stringify(item),
+    error: function(jqXHR, textStatus, errorThrown) {
+      alert(&#34;Something went wrong!&#34;);
+    },
+    success: function(result) {
+      getData();
+      $(&#34;#add-name&#34;).val(&#34;&#34;);
+    }
+  });
+}
+
+function deleteItem(id) {
+  $.ajax({
+    url: uri + &#34;/&#34; + id,
+    type: &#34;DELETE&#34;,
+    success: function(result) {
+      getData();
+    }
+  });
+}
+
+function editItem(id) {
+  $.each(todos, function(key, item) {
+    if (item.id === id) {
+      $(&#34;#edit-name&#34;).val(item.name);
+      $(&#34;#edit-id&#34;).val(item.id);
+      $(&#34;#edit-isComplete&#34;)[0].checked = item.isComplete;
+    }
+  });
+  $(&#34;#spoiler&#34;).css({ display: &#34;block&#34; });
+}
+
+$(&#34;.my-form&#34;).on(&#34;submit&#34;, function() {
+  const item = {
+    name: $(&#34;#edit-name&#34;).val(),
+    isComplete: $(&#34;#edit-isComplete&#34;).is(&#34;:checked&#34;),
+    id: $(&#34;#edit-id&#34;).val()
+  };
+
+  $.ajax({
+    url: uri + &#34;/&#34; + $(&#34;#edit-id&#34;).val(),
+    type: &#34;PUT&#34;,
+    accepts: &#34;application/json&#34;,
+    contentType: &#34;application/json&#34;,
+    data: JSON.stringify(item),
+    success: function(result) {
+      getData();
+    }
+  });
+
+  closeInput();
+  return false;
+});
+
+function closeInput() {
+  $(&#34;#spoiler&#34;).css({ display: &#34;none&#34; });
+}
+</code></pre>
+<p>A change to the ASP.NET Core project&#39;s launch settings may be required to test the HTML page locally:</p>
+<ul>
+<li>Open <em>Properties\launchSettings.json</em>.</li>
+<li>Remove the <code>launchUrl</code> property to force the app to open at <em>index.html</em>—the project&#39;s default file.</li>
+</ul>
+<p>There are several ways to get jQuery. In the preceding snippet, the library is loaded from a CDN.</p>
+<p>This sample calls all of the CRUD methods of the API. Following are explanations of the calls to the API.</p>
+<h2>Get a list of to-do items</h2>
+<p>The jQuery <a href="https://api.jquery.com/jquery.ajax/" target="_blank">ajax</a> function sends a <code>GET</code> request to the API, which returns JSON representing an array of to-do items. The <code>success</code> callback function is invoked if the request succeeds. In the callback, the DOM is updated with the to-do information.</p>
+<pre><code>$(document).ready(function() {
+  getData();
+});
+
+function getData() {
+  $.ajax({
+    type: &#34;GET&#34;,
+    url: uri,
+    cache: false,
+    success: function(data) {
+      const tBody = $(&#34;#todos&#34;);
+
+      $(tBody).empty();
+
+      getCount(data.length);
+
+      $.each(data, function(key, item) {
+        const tr = $(&#34;&lt;tr&gt;&lt;/tr&gt;&#34;)
+          .append(
+            $(&#34;&lt;td&gt;&lt;/td&gt;&#34;).append(
+              $(&#34;&lt;input/&gt;&#34;, {
+                type: &#34;checkbox&#34;,
+                disabled: true,
+                checked: item.isComplete
+              })
+            )
+          )
+          .append($(&#34;&lt;td&gt;&lt;/td&gt;&#34;).text(item.name))
+          .append(
+            $(&#34;&lt;td&gt;&lt;/td&gt;&#34;).append(
+              $(&#34;&lt;button&gt;Edit&lt;/button&gt;&#34;).on(&#34;click&#34;, function() {
+                editItem(item.id);
+              })
+            )
+          )
+          .append(
+            $(&#34;&lt;td&gt;&lt;/td&gt;&#34;).append(
+              $(&#34;&lt;button&gt;Delete&lt;/button&gt;&#34;).on(&#34;click&#34;, function() {
+                deleteItem(item.id);
+              })
+            )
+          );
+
+        tr.appendTo(tBody);
+      });
+
+      todos = data;
+    }
+  });
+}
+</code></pre>
+<h2>Add a to-do item</h2>
+<p>The <a href="https://api.jquery.com/jquery.ajax/" target="_blank">ajax</a> function sends a <code>POST</code> request with the to-do item in the request body. The <code>accepts</code> and <code>contentType</code> options are set to <code>application/json</code> to specify the media type being received and sent. The to-do item is converted to JSON by using <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify" target="_blank">JSON.stringify</a>. When the API returns a successful status code, the <code>getData</code> function is invoked to update the HTML table.</p>
+<pre><code>function addItem() {
+  const item = {
+    name: $(&#34;#add-name&#34;).val(),
+    isComplete: false
+  };
+
+  $.ajax({
+    type: &#34;POST&#34;,
+    accepts: &#34;application/json&#34;,
+    url: uri,
+    contentType: &#34;application/json&#34;,
+    data: JSON.stringify(item),
+    error: function(jqXHR, textStatus, errorThrown) {
+      alert(&#34;Something went wrong!&#34;);
+    },
+    success: function(result) {
+      getData();
+      $(&#34;#add-name&#34;).val(&#34;&#34;);
+    }
+  });
+}
+</code></pre>
+<h2>Update a to-do item</h2>
+<p>Updating a to-do item is similar to adding one. The <code>url</code> changes to add the unique identifier of the item, and the <code>type</code> is <code>PUT</code>.</p>
+<pre><code>$.ajax({
+  url: uri + &#34;/&#34; + $(&#34;#edit-id&#34;).val(),
+  type: &#34;PUT&#34;,
+  accepts: &#34;application/json&#34;,
+  contentType: &#34;application/json&#34;,
+  data: JSON.stringify(item),
+  success: function(result) {
+    getData();
+  }
+});
+</code></pre>
+<h2>Delete a to-do item</h2>
+<p>Deleting a to-do item is accomplished by setting the <code>type</code> on the AJAX call to <code>DELETE</code> and specifying the item&#39;s unique identifier in the URL.</p>
+<pre><code>$.ajax({
+  url: uri + &#34;/&#34; + id,
+  type: &#34;DELETE&#34;,
+  success: function(result) {
+    getData();
+  }
+});
+</code></pre>
+
+
+      </google-codelab-step>
+    
+  </google-codelab>
+
+  <script src="https://storage.googleapis.com/codelab-elements/native-shim.js"></script>
+  <script src="https://storage.googleapis.com/codelab-elements/custom-elements.min.js"></script>
+  <script src="https://storage.googleapis.com/codelab-elements/prettify.js"></script>
+  <script src="https://storage.googleapis.com/codelab-elements/codelab-elements.js"></script>
+
+</body>
+</html>
